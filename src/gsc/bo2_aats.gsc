@@ -67,7 +67,6 @@
 #include maps\mp\zombies\_zm_weap_jetgun;
 init()
 {
-    level thread onPlayerConnect();
 	precacheshader("damage_feedback");
 	precacheshader("hud_status_dead");    
 	if( getdvar( "mapname" ) == "zm_transit" )
@@ -78,27 +77,6 @@ init()
 	level._poi_override = ::turned_zombie;
     flag_wait( "initial_blackscreen_passed" );
 	level.callbackactordamage = ::actor_damage_override_wrapper;
-}
-
-onPlayerConnect()
-{
-    for(;;)
-    {
-        level waittill("connected", player);
-        player thread onPlayerSpawned();
-    }
-}
-
-onPlayerSpawned()
-{
-    self endon("disconnect");
-	level endon("game_ended");
-    for(;;)
-    {
-        self waittill("spawned_player");
-        self.score += 200000;
-        self enableInvulnerability();
-    }
 }
 
 vector_scal( vec, scale )
