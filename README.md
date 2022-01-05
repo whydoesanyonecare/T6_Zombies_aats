@@ -9,3 +9,5 @@ Ammo Types:
 - Headcutter
 - cluster
 - turned
+
+# this project has auto compiler
