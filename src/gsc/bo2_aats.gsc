@@ -312,7 +312,7 @@ pick_ammo(name, player)
 	{
 		player.weapon_aats = [];
 	}
-	aat = randomintrange(1,7); //change to randomintrange(1,8); if/when launchragdoll is fixed
+	aat = randomintrange(1,8); //INSANEMODE tested it abd it is working.
 	if(player.weaponname == name && player.last_aat == aat)
 	{
 		return pick_ammo(name, player);
