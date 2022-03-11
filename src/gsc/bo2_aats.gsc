@@ -65,6 +65,13 @@
 #include maps/mp/zombies/_zm_equip_turret;
 #include maps/mp/zombies/_zm_mgturret;
 #include maps\mp\zombies\_zm_weap_jetgun;
+
+#include maps/mp/zombies/_zm_ai_sloth;
+#include maps/mp/zombies/_zm_ai_sloth_ffotd;
+#include maps/mp/zombies/_zm_ai_sloth_utility;
+#include maps/mp/zombies/_zm_ai_sloth_magicbox;
+#include maps/mp/zombies/_zm_ai_sloth_crawler;
+#include maps/mp/zombies/_zm_ai_sloth_buildables;
 init()
 {
 	precacheshader("damage_feedback");
@@ -565,7 +572,52 @@ actor_damage_override_wrapper( inflictor, attacker, damage, flags, meansofdeath,
 
 actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex ) 
 {
-    
+    if(isdefined(level.sloth) && self == level.sloth)
+    {
+    	if ( weapon == "equip_headchopper_zm" )
+		{
+			self.damageweapon_name = weapon;
+			self check_zombie_damage_callbacks( meansofdeath, shitloc, vpoint, attacker, damage );
+			self.damageweapon_name = undefined;
+		}
+		if ( isDefined( self.sloth_damage_func ) )
+		{
+			xdamage = self [[ self.sloth_damage_func ]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime );
+			return xdamage;
+		}
+		if ( meansofdeath == level.slowgun_damage_mod && weapon == "slowgun_zm" )
+		{
+			return 0;
+		}
+		if ( meansofdeath == "MOD_MELEE" )
+		{
+			self sloth_leg_pain();
+			return 0;
+		}
+		if ( self.state == "jail_idle" )
+		{
+			self stop_action();
+			self sloth_set_state( "jail_cower" );
+			maps/mp/zombies/_zm_unitrigger::register_unitrigger( self.gift_trigger, ::buildable_place_think );
+			return 0;
+		}
+		if ( meansofdeath != "MOD_EXPLOSIVE" && meansofdeath != "MOD_EXPLOSIVE_SPLASH" && meansofdeath != "MOD_GRENADE" && meansofdeath != "MOD_GRENADE_SPLASH" || meansofdeath == "MOD_PROJECTILE" && meansofdeath == "MOD_PROJECTILE_SPLASH" )
+		{
+			do_pain = self sloth_pain_react();
+			self sloth_set_state( "jail_run", do_pain );
+			return 0;
+		}
+		if ( !is_true( self.damage_accumulating ) )
+		{
+			self thread sloth_accumulate_damage( damage );
+		}
+		else
+		{
+			self.damage_taken += damage;
+			self.num_hits++;
+		}
+		return 0;
+    }
 	if(isdefined( attacker.weaponname ))
 	{
         //attacker cannot damage active turned zombie
