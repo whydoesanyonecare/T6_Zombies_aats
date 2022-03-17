@@ -702,6 +702,7 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
 					thunder_wall = aat_activation;
 					if(thunder_wall == 1)
 					{
+                        attacker setclientdvar( "ragdoll_enable", 1);
 						attacker.aat_actived = 1;
 						self thread thunderwall(attacker);
 						attacker thread cool_down(aat_cooldown_time);
@@ -1103,3 +1104,110 @@ is_true(check)
 {
 	return(IsDefined(check) && check);
 }
+
+//----leroy-functions----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+sloth_leg_pain()
+{
+	self.leg_pain_time = getTime() + 4000;
+}
+
+stop_action()
+{
+	self notify( "stop_action" );
+	self.is_turning = 0;
+	self.teleport = undefined;
+	self.needs_action = 1;
+	self stopanimscripted();
+	self unlink();
+	self orientmode( "face default" );
+}
+
+sloth_set_state( state, param2 )
+{
+	if ( isDefined( self.start_funcs[ state ] ) )
+	{
+		result = 0;
+		if ( isDefined( param2 ) )
+		{
+			result = self [[ self.start_funcs[ state ] ]]( param2 );
+		}
+		else
+		{
+			result = self [[ self.start_funcs[ state ] ]]();
+		}
+		if ( result == 1 )
+		{
+			self.state = state;
+		}
+	}
+}
+
+sloth_pain_react()
+{
+	if ( self.state != "roam" || self.state == "follow" && self.state == "player_idle" )
+	{
+		if ( !self sloth_is_traversing() )
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+sloth_accumulate_damage( amount )
+{
+	self endon( "death" );
+	self notify( "stop_accumulation" );
+	self endon( "stop_accumulation" );
+	self.damage_accumulating = 1;
+	self.damage_taken = amount;
+	self.num_hits = 1;
+	if ( self sloth_pain_react() )
+	{
+		self.is_pain = 1;
+		prev_anim_state = self getanimstatefromasd();
+		if ( self.state == "roam" || self.state == "follow" )
+		{
+			self animmode( "gravity" );
+		}
+		self setanimstatefromasd( "zm_pain" );
+		self.reset_asd = "zm_pain";
+		maps/mp/animscripts/zm_shared::donotetracks( "pain_anim" );
+		if ( self.state == "roam" || self.state == "follow" )
+		{
+			self animmode( "normal" );
+		}
+		self.is_pain = 0;
+		self.reset_asd = undefined;
+		self setanimstatefromasd( prev_anim_state );
+	}
+	else
+	{
+		wait 1;
+	}
+	self.damage_accumulating = 0;
+	if ( self.num_hits >= 3 )
+	{
+		self sloth_set_state( "jail_run", 0 );
+	}
+}
+
+sloth_is_traversing()
+{
+	if ( is_true( self.is_traversing ) )
+	{
+		anim_state = self getanimstatefromasd();
+		if ( anim_state != "zm_traverse" && anim_state != "zm_traverse_no_restart" && anim_state != "zm_traverse_barrier" && anim_state != "zm_traverse_barrier_no_restart" && anim_state != "zm_sling_equipment" && anim_state != "zm_unsling_equipment" && anim_state != "zm_sling_magicbox" && anim_state != "zm_unsling_magicbox" && anim_state != "zm_sloth_crawlerhold_sling" && anim_state != "zm_sloth_crawlerhold_unsling" || anim_state == "zm_sloth_crawlerhold_sling_hunched" && anim_state == "zm_sloth_crawlerhold_unsling_hunched" )
+		{
+			return 1;
+		}
+		else
+		{
+			self.is_traversing = 0;
+		}
+	}
+	return 0;
+}
+
+//_-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
