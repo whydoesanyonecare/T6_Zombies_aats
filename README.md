@@ -5,7 +5,7 @@ Ammo Types:
 - blast furnace
 - fireworks
 - explosive bullets
-- thunder wall (disabled at the moment because plutonium t6 client has issues with it)
+- thunder wall
 - Headcutter
 - cluster
 - turned
