@@ -82,8 +82,26 @@ init()
 	}
     level.custom_pap_validation = thread new_pap_trigger();
 	level._poi_override = ::turned_zombie;
+    register_player_damage_callback( ::playerdamagelastcheck );
     flag_wait( "initial_blackscreen_passed" );
 	level.callbackactordamage = ::actor_damage_override_wrapper;
+}
+
+playerdamagelastcheck( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
+{
+	/*if(isdefined(self.has_cluster) && self.has_cluster && isdefined(eattacker) && eattacker == self) //someone will cry about it eventually..
+    {
+        return 0;
+    }*/ 
+	players = get_players();
+	for(i=0;i<players.size;i++)
+	{
+		if(isdefined(players[i].firework_weapon) && eattacker == players[i].firework_weapon)
+		{
+			return 0;
+		}
+	}
+	return idamage;
 }
 
 vector_scal( vec, scale )
@@ -740,7 +758,7 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
 						attacker thread cool_down(aat_cooldown_time);
 						origin = self.origin;
 						weapon = attacker getcurrentweapon();
-						self thread spawn_weapon(origin, weapon);
+						self thread spawn_weapon(origin, weapon, attacker);
 						self thread fireworks(origin);
 						return damage;
                         //self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
@@ -828,23 +846,23 @@ fireworks(origin)
 	}
 }
 
-spawn_weapon(origin, weapon)
+spawn_weapon(origin, weapon, attacker)
 {
-	firework_weapon = spawnentity( "script_model", getweaponmodel( weapon ), origin + (0,0,45), (0,0,0) + ( 0, 50, 0 ));
-	for(i=0;i<100;i++)
-	{
-		zombies = get_array_of_closest( firework_weapon.origin, getaiarray( level.zombie_team ), undefined, undefined, 300  );
-		forward = firework_weapon.origin;
-		end = zombies[ 0 ] gettagorigin( "j_spineupper" );
-		crosshair = bullettrace( forward, end, 0, self )[ "position"];
-		firework_weapon.angles = VectorToAngles( end - firework_weapon.origin );
-		if( distance(zombies[ 0 ].origin, firework_weapon.origin) <= 300)
-		{
-			magicbullet( weapon, firework_weapon.origin, crosshair, firework_weapon );
-		}
-		wait .05;
-	}
-	firework_weapon delete();
+    attacker.firework_weapon = spawnentity( "script_model", getweaponmodel( weapon ), origin + (0,0,45), (0,0,0) + ( 0, 50, 0 ));
+    for(i=0;i<100;i++)
+    {
+        zombies = get_array_of_closest( attacker.firework_weapon.origin, getaiarray( level.zombie_team ), undefined, undefined, 300  );
+        forward = attacker.firework_weapon.origin;
+        end = zombies[ 0 ] gettagorigin( "j_spineupper" );
+        crosshair = bullettrace( forward, end, 0, self )[ "position"];
+        attacker.firework_weapon.angles = VectorToAngles( end - attacker.firework_weapon.origin );
+        if( distance(zombies[ 0 ].origin, attacker.firework_weapon.origin) <= 300)
+        {
+            magicbullet( weapon, attacker.firework_weapon.origin, crosshair, attacker.firework_weapon );
+        }
+        wait .05;
+    }
+    attacker.firework_weapon delete();
 }
 
 spawnentity( class, model, origin, angle )
