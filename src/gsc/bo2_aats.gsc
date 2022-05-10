@@ -162,7 +162,7 @@ new_pap_trigger()
 		trigger = spawn( "trigger_radius", perk_machine.origin, 1, 35, 80 );
 	}
 	Trigger SetCursorHint( "HINT_NOICON" );
-    Trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", 5000 );
+    Trigger sethintstring( "			Hold ^3&&1^7 for Pack-a-Punch [Cost: 5000] \n Weapons can be pack a punched multiple times" );
 	Trigger usetriggerrequirelookat();
 	perk_machine thread maps/mp/zombies/_zm_perks::activate_packapunch();
 	for(;;)
@@ -223,7 +223,7 @@ new_pap_trigger()
 			self.pack_player = undefined;
 			flag_clear( "pack_machine_in_use" );
 		}
-        trigger sethintstring( &"ZOMBIE_PERK_PACKAPUNCH", 5000 );
+        Trigger sethintstring( "			Hold ^3&&1^7 for Pack-a-Punch [Cost: 5000] \n Weapons can be pack a punched multiple times" );
 		wait .1;
 	}
 }
