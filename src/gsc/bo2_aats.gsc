@@ -142,9 +142,10 @@ new_pap_trigger()
 		if(!level.buildables_built[ "pap" ])
 		{
 			level waittill("pap_built");
-			wait 1;
+			
 		}
 	}
+	wait 1;
 	self.perk_machine = perk_machine;
 	perk_machine_sound = getentarray( "perksacola", "targetname" );
 	packa_rollers = spawn( "script_origin", perk_machine.origin );
