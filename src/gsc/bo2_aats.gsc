@@ -84,6 +84,7 @@ init()
 	level._poi_override = ::turned_zombie;
     register_player_damage_callback( ::playerdamagelastcheck );
     flag_wait( "initial_blackscreen_passed" );
+    level.original_damagecallback = level.callbackactordamage;
 	level.callbackactordamage = ::actor_damage_override_wrapper;
 }
 
@@ -591,51 +592,9 @@ actor_damage_override_wrapper( inflictor, attacker, damage, flags, meansofdeath,
 
 actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex ) 
 {
-    if(isdefined(level.sloth) && self == level.sloth)
+    if(isdefined(level.sloth) && self == level.sloth || isDefined(self.is_avogadro) && self.is_avogadro || isDefined(self.is_brutus) && self.is_brutus || isDefined(self.is_mechz) && self.is_mechz )
     {
-    	if ( weapon == "equip_headchopper_zm" )
-		{
-			self.damageweapon_name = weapon;
-			self check_zombie_damage_callbacks( meansofdeath, shitloc, vpoint, attacker, damage );
-			self.damageweapon_name = undefined;
-		}
-		if ( isDefined( self.sloth_damage_func ) )
-		{
-			xdamage = self [[ self.sloth_damage_func ]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime );
-			return xdamage;
-		}
-		if ( meansofdeath == level.slowgun_damage_mod && weapon == "slowgun_zm" )
-		{
-			return 0;
-		}
-		if ( meansofdeath == "MOD_MELEE" )
-		{
-			self sloth_leg_pain();
-			return 0;
-		}
-		if ( self.state == "jail_idle" )
-		{
-			self stop_action();
-			self sloth_set_state( "jail_cower" );
-			maps/mp/zombies/_zm_unitrigger::register_unitrigger( self.gift_trigger, ::buildable_place_think );
-			return 0;
-		}
-		if ( meansofdeath != "MOD_EXPLOSIVE" && meansofdeath != "MOD_EXPLOSIVE_SPLASH" && meansofdeath != "MOD_GRENADE" && meansofdeath != "MOD_GRENADE_SPLASH" || meansofdeath == "MOD_PROJECTILE" && meansofdeath == "MOD_PROJECTILE_SPLASH" )
-		{
-			do_pain = self sloth_pain_react();
-			self sloth_set_state( "jail_run", do_pain );
-			return 0;
-		}
-		if ( !is_true( self.damage_accumulating ) )
-		{
-			self thread sloth_accumulate_damage( damage );
-		}
-		else
-		{
-			self.damage_taken += damage;
-			self.num_hits++;
-		}
-		return 0;
+		return [[level.original_damagecallback]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
     }
 	if(isdefined( attacker.weaponname ))
 	{
@@ -653,122 +612,111 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
             aat_cooldown_time = randomintrange(10, 16); //cooldown 10 - 15 seconds
 	        aat_activation = randomintrange(1,11); //bullet that actives aat 1 - 10 
 
-			if(isDefined(self.is_avogadro) && self.is_avogadro || isDefined(self.is_brutus) && self.is_brutus || isDefined(self.is_mechz) && self.is_mechz )
-			{
-				//boss zombie check
-                return int( damage );
-			}
-			else
-			{
-				zombies = getaiarray( level.zombie_team );
-				if(meansofdeath == "MOD_GRENADE" || meansofdeath == "MOD_GRENADE_SPLASH" || meansofdeath == "MOD_EXPLOSIVE" || meansofdeath == "MOD_PROJECTILE")
-				{
-					if(is_weapon_upgraded( weapon ))
-					{
-					}
-					else
-					{
-						return damage;
-					}
-				}
-				if(self turned_zombie_validation() && attacker.has_turned && !attacker.active_turned)
-				{
-					turned = aat_activation;
-					if(turned == 1)
-					{
-						attacker.aat_actived = 1;
-						attacker thread cool_down(aat_cooldown_time);
-						self thread turned( attacker );
-						idamage = 1;
-						return idamage;
-					}
-				}
-				if(attacker.has_cluster)
-				{
-					cluster = aat_activation;
-					if(cluster == 1)
-					{
-						attacker.aat_actived = 1;
-						attacker thread cool_down(aat_cooldown_time);
-						self thread cluster();
-						self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
-					}
+            zombies = getaiarray( level.zombie_team );
+            if(meansofdeath == "MOD_GRENADE" || meansofdeath == "MOD_GRENADE_SPLASH" || meansofdeath == "MOD_EXPLOSIVE" || meansofdeath == "MOD_PROJECTILE")
+            {
+                if(is_weapon_upgraded( weapon ))
+                {
+                }
+                else
+                {
+                    return [[level.original_damagecallback]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
+                }
+            }
+            if(self turned_zombie_validation() && attacker.has_turned && !attacker.active_turned)
+            {
+                turned = aat_activation;
+                if(turned == 1)
+                {
+                    attacker.aat_actived = 1;
+                    attacker thread cool_down(aat_cooldown_time);
+                    self thread turned( attacker );
+                }
+            }
+            if(attacker.has_cluster)
+            {
+                cluster = aat_activation;
+                if(cluster == 1)
+                {
+                    attacker.aat_actived = 1;
+                    attacker thread cool_down(aat_cooldown_time);
+                    self thread cluster();
+        			self dodamage( self.health * 2, (0,0,0), attacker, attacker, "none", "MOD_IMPACT" );
+                }
 
-				}
-				if(attacker.has_Headcutter)
-				{
-					Headcutter = aat_activation;
-					if(Headcutter == 1)
-					{
-						attacker.aat_actived = 1;
-						attacker thread cool_down(aat_cooldown_time);
-						for( i=0; i < zombies.size; i++ )
-						{
-							if(distance(self.origin, zombies[i].origin) <= 200)
-							{
-								if(!zombies[i].done)
-								{
-									zombies[i].done = 1;
-									zombies[i] thread Headcutter(attacker);
-								}
-							}
-						}
-						self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
-					}
-				}
-				if(attacker.has_thunder_wall)
-				{
-					thunder_wall = aat_activation;
-					if(thunder_wall == 1)
-					{
-                        attacker setclientdvar( "ragdoll_enable", 1);
-						attacker.aat_actived = 1;
-						self thread thunderwall(attacker);
-						attacker thread cool_down(aat_cooldown_time);
-						self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
-					}
-					
-				}
-				if(attacker.has_blast_furnace)
-				{
-					blast_furnace = aat_activation;
-					if(blast_furnace == 1)
-					{
-						attacker.aat_actived = 1;
-						attacker thread cool_down(aat_cooldown_time);
-						flameFX=loadfx("env/fire/fx_fire_zombie_torso");
-						PlayFXOnTag(flameFX,self, "j_spinelower");
-						flameFX2=loadfx("env/fire/fx_fire_zombie_md");
-						PlayFXOnTag(flameFX2,self,"j_spineupper");
-						for( i = 0; i < zombies.size; i++ )
-						{
-							if(distance(self.origin, zombies[i].origin) <= 220)
-							{
-								zombies[i] thread flames_fx();
-							}
-						}
-						self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
-					}
-				}
-				if(attacker.has_fireworks)
-				{
-					fireworks = aat_activation;
-					if(fireworks == 1)
-					{
-						attacker.aat_actived = 1;
-						attacker thread cool_down(aat_cooldown_time);
-						origin = self.origin;
-						weapon = attacker getcurrentweapon();
-						self thread spawn_weapon(origin, weapon, attacker);
-						self thread fireworks(origin);
-						return damage;
-                        //self dodamage( self.health * 2, self.origin, attacker, attacker, "none", "MOD_IMPACT" );
-					}
-				}
-			}
+            }
+            if(attacker.has_Headcutter)
+            {
+                Headcutter = aat_activation;
+                if(Headcutter == 1)
+                {
+                    attacker.aat_actived = 1;
+                    attacker thread cool_down(aat_cooldown_time);
+                    for( i=0; i < zombies.size; i++ )
+                    {
+                        if(distance(self.origin, zombies[i].origin) <= 200)
+                        {
+                            if(!zombies[i].done)
+                            {
+                                zombies[i].done = 1;
+                                zombies[i] thread Headcutter(attacker);
+                            }
+                        }
+                    }
+        			self dodamage( self.health * 2, (0,0,0), attacker, attacker, "none", "MOD_IMPACT" );
+                }
+            }
+            if(attacker.has_thunder_wall)
+            {
+                thunder_wall = aat_activation;
+                if(thunder_wall == 1)
+                {
+                    attacker setclientdvar( "ragdoll_enable", 1);
+                    attacker.aat_actived = 1;
+                    self thread thunderwall(attacker);
+                    attacker thread cool_down(aat_cooldown_time);
+        			self dodamage( self.health * 2, (0,0,0), attacker, attacker, "none", "MOD_IMPACT" );
+                }
+                
+            }
+            if(attacker.has_blast_furnace)
+            {
+                blast_furnace = aat_activation;
+                if(blast_furnace == 1)
+                {
+                    attacker.aat_actived = 1;
+                    attacker thread cool_down(aat_cooldown_time);
+                    flameFX=loadfx("env/fire/fx_fire_zombie_torso");
+                    PlayFXOnTag(flameFX,self, "j_spinelower");
+                    flameFX2=loadfx("env/fire/fx_fire_zombie_md");
+                    PlayFXOnTag(flameFX2,self,"j_spineupper");
+                    for( i = 0; i < zombies.size; i++ )
+                    {
+                        if(distance(self.origin, zombies[i].origin) <= 220)
+                        {
+                            zombies[i] thread flames_fx();
+                        }
+                    }
+        			self dodamage( self.health * 2, (0,0,0), attacker, attacker, "none", "MOD_IMPACT" );
+                }
+            }
+            if(attacker.has_fireworks)
+            {
+                fireworks = aat_activation;
+                if(fireworks == 1)
+                {
+                    attacker.aat_actived = 1;
+                    attacker thread cool_down(aat_cooldown_time);
+                    origin = self.origin;
+                    weapon = attacker getcurrentweapon();
+                    self thread spawn_weapon(origin, weapon, attacker);
+                    self thread fireworks(origin);
+                    self dodamage( self.health * 2, (0,0,0), attacker, attacker, "none", "MOD_IMPACT" );
+                }
+            }
 		}
 	}
-	return int( damage );
+	return [[level.original_damagecallback]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
 }
 
 cool_down(time)
@@ -1123,110 +1071,3 @@ is_true(check)
 {
 	return(IsDefined(check) && check);
 }
-
-//----leroy-functions----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-sloth_leg_pain()
-{
-	self.leg_pain_time = getTime() + 4000;
-}
-
-stop_action()
-{
-	self notify( "stop_action" );
-	self.is_turning = 0;
-	self.teleport = undefined;
-	self.needs_action = 1;
-	self stopanimscripted();
-	self unlink();
-	self orientmode( "face default" );
-}
-
-sloth_set_state( state, param2 )
-{
-	if ( isDefined( self.start_funcs[ state ] ) )
-	{
-		result = 0;
-		if ( isDefined( param2 ) )
-		{
-			result = self [[ self.start_funcs[ state ] ]]( param2 );
-		}
-		else
-		{
-			result = self [[ self.start_funcs[ state ] ]]();
-		}
-		if ( result == 1 )
-		{
-			self.state = state;
-		}
-	}
-}
-
-sloth_pain_react()
-{
-	if ( self.state != "roam" || self.state == "follow" && self.state == "player_idle" )
-	{
-		if ( !self sloth_is_traversing() )
-		{
-			return 1;
-		}
-	}
-	return 0;
-}
-
-sloth_accumulate_damage( amount )
-{
-	self endon( "death" );
-	self notify( "stop_accumulation" );
-	self endon( "stop_accumulation" );
-	self.damage_accumulating = 1;
-	self.damage_taken = amount;
-	self.num_hits = 1;
-	if ( self sloth_pain_react() )
-	{
-		self.is_pain = 1;
-		prev_anim_state = self getanimstatefromasd();
-		if ( self.state == "roam" || self.state == "follow" )
-		{
-			self animmode( "gravity" );
-		}
-		self setanimstatefromasd( "zm_pain" );
-		self.reset_asd = "zm_pain";
-		maps/mp/animscripts/zm_shared::donotetracks( "pain_anim" );
-		if ( self.state == "roam" || self.state == "follow" )
-		{
-			self animmode( "normal" );
-		}
-		self.is_pain = 0;
-		self.reset_asd = undefined;
-		self setanimstatefromasd( prev_anim_state );
-	}
-	else
-	{
-		wait 1;
-	}
-	self.damage_accumulating = 0;
-	if ( self.num_hits >= 3 )
-	{
-		self sloth_set_state( "jail_run", 0 );
-	}
-}
-
-sloth_is_traversing()
-{
-	if ( is_true( self.is_traversing ) )
-	{
-		anim_state = self getanimstatefromasd();
-		if ( anim_state != "zm_traverse" && anim_state != "zm_traverse_no_restart" && anim_state != "zm_traverse_barrier" && anim_state != "zm_traverse_barrier_no_restart" && anim_state != "zm_sling_equipment" && anim_state != "zm_unsling_equipment" && anim_state != "zm_sling_magicbox" && anim_state != "zm_unsling_magicbox" && anim_state != "zm_sloth_crawlerhold_sling" && anim_state != "zm_sloth_crawlerhold_unsling" || anim_state == "zm_sloth_crawlerhold_sling_hunched" && anim_state == "zm_sloth_crawlerhold_unsling_hunched" )
-		{
-			return 1;
-		}
-		else
-		{
-			self.is_traversing = 0;
-		}
-	}
-	return 0;
-}
-
-//_-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
