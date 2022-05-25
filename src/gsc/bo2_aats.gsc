@@ -572,7 +572,12 @@ monitor_aat_weapon()
 				}
 			}
 		}
-		if(self getCurrentWeapon() != self.aat_weapon[0] && self getCurrentWeapon() != self.aat_weapon[1] && self getCurrentWeapon() != self.aat_weapon[2])
+        if(isdefined(self.keep_perks) && self.keep_perks)
+        {
+            //iprintln("keep_perks");
+            //keep aat when returning from bridge
+        }
+		else if(self getCurrentWeapon() != self.aat_weapon[0] && self getCurrentWeapon() != self.aat_weapon[1] && self getCurrentWeapon() != self.aat_weapon[2])
 		{
             self.has_thunder_wall = 0;
 			self.has_fireworks = 0;
