@@ -135,6 +135,10 @@ new_pap_trigger()
 		level notify("Pack_A_Punch_off");
 		level thread pap_off();
 	}
+    if( getdvar( "mapname" ) == "zm_nuked" )
+    {
+        level waittill( "Pack_A_Punch_on" );
+    }
 	perk_machine = getent( "vending_packapunch", "targetname" );
 	weapon_upgrade_trigger = getentarray( "specialty_weapupgrade", "script_noteworthy" );
 	weapon_upgrade_trigger[0] trigger_off();
