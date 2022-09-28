@@ -1035,7 +1035,11 @@ turned( attacker )
 	//allow round change while turned zombie is alive
 	self.ignore_enemy_count = 1;
 
-	attackanim = "zm_riotshield_melee";
+	if(getdvar("mapname") == "zm_tomb")
+		attackanim = "zm_generator_melee";
+	else
+		attackanim = "zm_riotshield_melee";
+	
 	if ( !self.has_legs )
 	{
 		attackanim += "_crawl";
