@@ -653,15 +653,14 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
     }
 	if(isdefined( attacker.weaponname ))
 	{
-        //attacker cannot damage active turned zombie
+        
         if(!isDefined(self.is_turned))
-        {
             self.is_turned = 0;
-        }
-		if(attacker.active_turned && self.is_turned)
-		{
+
+		//attacker cannot damage active turned zombie
+		if(/*attacker.active_turned &&*/ self.is_turned)
 			return 0;
-		}
+
 		if(isdefined( attacker ) && isplayer( attacker ) && !attacker.cooldown && MeansOfDeath != "MOD_MELEE" && MeansOfDeath != "MOD_IMPACT" && weapon != "knife_zm")
 		{
             aat_cooldown_time = randomintrange(10, 16); //cooldown 10 - 15 seconds
@@ -1066,16 +1065,19 @@ turned( attacker )
 			self animscripted( self.origin, angles, attackanim );
 			ai_zombies[1] dodamage(ai_zombies[1].maxhealth * 2, ai_zombies[1].origin);
 			turned_zombie_kills++;
+
 			if(turned_zombie_kills > max_kills)
 			{
+				self.is_turned = 0;
+				wait .1;
 				self dodamage(self.maxhealth * 2, self.origin);
 			}
+
 			wait 1;
 		}
 		else
-		{
 			self stopanimscripted();
-		}
+
 		wait .05; 
 	}
 	attacker.active_turned = 0;
