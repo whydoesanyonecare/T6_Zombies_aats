@@ -76,6 +76,12 @@
 
 #include maps/mp/zombies/_zm_tombstone;
 #include maps/mp/zombies/_zm_chugabud;
+
+main()
+{
+	register_player_damage_callback( ::playerdamagelastcheck ); //moved to main from init because of it not loading in origins
+}
+
 init()
 {
 	//isTown(); tombstone fix 
@@ -88,9 +94,9 @@ init()
 	}
     level.custom_pap_validation = thread new_pap_trigger();
 	level._poi_override = ::turned_zombie;
-    register_player_damage_callback( ::playerdamagelastcheck );
     flag_wait( "initial_blackscreen_passed" );
-    level.original_damagecallback = level.callbackactordamage;
+
+	level.original_damagecallback = level.callbackactordamage;
 	level.callbackactordamage = ::actor_damage_override_wrapper;
     //get_players()[0] thread perks_gived(); //test tombstone and whos who aat recovery
 	wait 1;
@@ -112,6 +118,7 @@ perks_gived()
 
 playerdamagelastcheck( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
 {
+    iprintln("damage");
 	if(isdefined(self.has_cluster) && self.has_cluster && isdefined(eattacker) && eattacker == self) 
     {
         return 0;
