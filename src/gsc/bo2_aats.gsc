@@ -118,7 +118,6 @@ perks_gived()
 
 playerdamagelastcheck( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
 {
-    iprintln("damage");
 	if(isdefined(self.has_cluster) && self.has_cluster && isdefined(eattacker) && eattacker == self) 
     {
         return 0;
