@@ -91,9 +91,6 @@ main()
 init()
 {
     onplayerconnect_callback( ::watch_weapon_changes ); 
-
-	if( getdvar( "mapname" ) == "zm_transit" )
-		level._effect[ "jetgun_smoke_cloud" ] = loadfx( "weapon\thunder_gun\fx_thundergun_smoke_cloud" );
 	
     thread new_pap_trigger();
 	level._poi_override = ::turned_zombie;
@@ -287,33 +284,34 @@ wait_for_pick(player, weapon, upgrade_weapon)
 			player thread do_player_general_vox( "general", "pap_arm2", 15, 100 );
 
             base = get_base_name(weapon);
-			if(is_weapon_upgraded( weapon ))
+            if( base == "galil_upgraded_zm" || base == "fnfal_upgraded_zm" || base == "ak74u_upgraded_zm" )
 			{
-				player.restore_ammo = 1;
-                
-				if( weapon == "galil_upgraded_zm+reflex" || weapon  == "fnfal_upgraded_zm+reflex" || base == "ak74u_upgraded_zm" || base  == "galil_upgraded_zm"  || base  == "fnfal_upgraded_zm")
-                	player thread give_aat(weapon); //Alternative ammo type for galil and fnfal upgraded
-				else
-					player thread give_aat(upgrade_weapon); //Alternative ammo type for all other weapons
-			}
-			else if( weapon == "galil_upgraded_zm+reflex" || weapon  == "fnfal_upgraded_zm+reflex" || base == "ak74u_upgraded_zm" )
-			{
+                player.restore_ammo = 1;
+                player thread give_aat(weapon); //Alternative ammo type for ak74u, galil and fnfal upgraded
 				player giveweapon( weapon, 0, player maps\mp\zombies\_zm_weapons::get_pack_a_punch_weapon_options( weapon ));
 				player switchToWeapon( weapon );
+                x = weapon;
+            }
+			else 
+            {
+                if(is_weapon_upgraded( weapon ))
+                {
+                    player.restore_ammo = 1;
+                    player thread give_aat(upgrade_weapon); //Alternative ammo type for all other weapons
+                }
+                weapon_limit = get_player_weapon_limit( player );
+                player maps\mp\zombies\_zm_weapons::take_fallback_weapon();
+                primaries = player getweaponslistprimaries();
+                
+                if ( isDefined( primaries ) && primaries.size >= weapon_limit )
+                    player maps\mp\zombies\_zm_weapons::weapon_give( upgrade_weapon );
+                else
+                    player giveweapon( upgrade_weapon, 0, player maps\mp\zombies\_zm_weapons::get_pack_a_punch_weapon_options( upgrade_weapon ));
+
+                player switchToWeapon( upgrade_weapon );
+                x = upgrade_weapon;
             }
 
-			weapon_limit = get_player_weapon_limit( player );
-			player maps\mp\zombies\_zm_weapons::take_fallback_weapon();
-			primaries = player getweaponslistprimaries();
-			
-			if ( isDefined( primaries ) && primaries.size >= weapon_limit )
-				player maps\mp\zombies\_zm_weapons::weapon_give( upgrade_weapon );
-			else
-				player giveweapon( upgrade_weapon, 0, player maps\mp\zombies\_zm_weapons::get_pack_a_punch_weapon_options( upgrade_weapon ));
-
-			player switchToWeapon( upgrade_weapon );
-			x = upgrade_weapon;
-            
 			if ( isDefined( player.restore_ammo ) && player.restore_ammo )
 			{
 				new_clip = player.restore_clip + ( weaponclipsize( x ) - player.restore_clip_size );
